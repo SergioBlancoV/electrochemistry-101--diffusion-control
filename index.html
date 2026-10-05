@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diffusion control of electrochemical processes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Literata:ital,opsz,wght@0,7..72,400..600;1,7..72,400&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --paper:#E6EEE8;
+  --paper-line:rgba(46,105,72,.075);
+  --sheet:#FAFCFA;
+  --ink:#18242F;
+  --ink-soft:#4A5866;
+  --rule:#B6C6BB;
+  --plot-grid:#E2E9E4;
+  --anodic:#B02F28;
+  --cathodic:#1E539C;
+  --transport:#95600F;
+  --window:rgba(30,83,156,.09);
+  --sans:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --serif:"Literata",Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.65;
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--paper-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--paper-line) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+math{font-family:"STIX Two Math","Cambria Math","Latin Modern Math",math;font-size:1.08em}
+.katex{display:inline}
+.eq math[display=block],.hero-eq math[display=block]{display:inline math;math-style:normal}
+.eq{display:block;margin:1.1rem 0 1.3rem;overflow-x:auto;padding:.2rem 0 .2rem 1.5em}
+.eq math{font-size:1.25em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.prose{max-width:68ch}
+a{color:var(--cathodic)}
+:focus-visible{outline:3px solid var(--transport);outline-offset:2px}
+
+/* header */
+.top{border-bottom:1px solid var(--rule);background:rgba(230,238,232,.92);position:sticky;top:0;z-index:5;backdrop-filter:blur(4px)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:54px}
+.course{font-family:var(--sans);font-size:14px;color:var(--ink-soft);font-stretch:90%}
+.course a{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1px solid var(--rule)}
+.course a:hover{border-bottom-color:var(--ink)}
+.top nav{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--sans);font-size:14px}
+.top nav a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+.top nav a:hover{border-bottom-color:var(--ink)}
+
+/* type */
+h1,h2,h3{font-family:var(--sans);font-weight:650;line-height:1.1;margin:0}
+h1{font-size:clamp(38px,5.6vw,68px);font-stretch:78%;letter-spacing:-.01em;margin-top:30px}
+h2{font-size:clamp(30px,3.6vw,42px);font-stretch:82%;margin:0 0 18px}
+h2 .sec{color:var(--ink-soft);font-weight:450;margin-right:.35em}
+h3{font-size:24px;font-stretch:88%;margin:36px 0 10px}
+p{margin:0 0 1em}
+.lede{font-size:21px;max-width:60ch;color:var(--ink);margin-top:14px}
+section{padding:64px 0 20px;border-top:1px solid var(--rule)}
+section:first-of-type{border-top:0}
+.note{font-size:15.5px;color:var(--ink-soft);line-height:1.55}
+sub,sup{line-height:0}
+
+/* hero */
+.hero{padding-bottom:30px}
+.hero-eq{width:fit-content;max-width:100%;margin:22px 0 8px;padding:14px 26px;background:var(--sheet);border-left:4px solid var(--ink);overflow-x:auto}
+.hero-eq math{font-size:1.7em}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));max-width:1000px;gap:4px 28px;margin:14px 0 0;font-size:15.5px;line-height:1.45}
+.terms div{display:flex;gap:10px}
+.terms dt{font-family:var(--serif);font-style:italic;min-width:3.8em;font-weight:600;white-space:nowrap}
+.terms dd{margin:0;color:var(--ink-soft)}
+
+/* labs */
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:26px;align-items:start;margin:26px 0 30px}
+.lab.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 290px}
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:2px;padding:14px 14px 8px}
+.sheet canvas{display:block;width:100%;height:360px}
+.hero .sheet canvas{height:440px}
+.sheet .cap{font-family:var(--sans);font-size:14px;color:var(--ink-soft);margin:6px 2px 4px;line-height:1.35}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--sans);font-size:14px;margin:8px 2px 2px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{display:inline-block;width:26px;height:0;border-top:3px solid currentColor}
+.legend i.dash{border-top-style:dashed}
+.controls{font-family:var(--sans);font-size:15px;border-left:1px solid var(--rule);padding-left:20px}
+.ctl{margin:0 0 16px}
+.ctl label,.ctl .lbl{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:4px}
+.ctl output{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+input[type=range]{width:100%;accent-color:var(--ink);height:26px;margin:0}
+select{font:inherit;padding:4px 6px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:2px}
+.check{display:flex;gap:8px;align-items:center;font-size:14.5px}
+.check input{accent-color:var(--ink);width:17px;height:17px}
+.readout{margin:18px 0 0;padding-top:12px;border-top:1px solid var(--rule)}
+.readout div{display:flex;justify-content:space-between;gap:10px;padding:3px 0;font-size:14.5px;line-height:1.35}
+.readout dt{color:var(--ink-soft)}
+.readout dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.state{margin-top:10px;font-size:14.5px;padding:8px 10px;background:var(--paper);border-radius:2px}
+.radios{display:flex;flex-direction:column;gap:6px}
+.radios label{display:flex;gap:8px;align-items:center;justify-content:flex-start}
+.radios input{accent-color:var(--cathodic)}
+button{font-family:var(--sans);font-size:15px;font-weight:600;padding:8px 14px;border:1.5px solid var(--ink);background:var(--sheet);color:var(--ink);border-radius:2px;cursor:pointer;margin:0 8px 8px 0}
+button:hover{background:var(--ink);color:var(--sheet)}
+
+.try{background:var(--sheet);border:1px dashed var(--rule);padding:14px 18px;max-width:78ch;font-size:16.5px}
+.try strong{font-family:var(--sans);font-weight:650}
+
+/* worked examples */
+table.data{border-collapse:collapse;font-family:var(--sans);font-size:15.5px;margin:10px 0 18px;font-variant-numeric:tabular-nums}
+table.data th,table.data td{padding:5px 16px;text-align:right;border-bottom:1px solid var(--rule)}
+table.data th{font-weight:600;border-bottom:1.5px solid var(--ink)}
+details{max-width:78ch;margin:10px 0;border-top:1px solid var(--rule);padding:8px 0}
+details summary{cursor:pointer;font-family:var(--sans);font-weight:600;font-size:16.5px}
+details[open] summary{margin-bottom:8px}
+ol.steps{padding-left:1.3em;margin:6px 0}
+ol.steps li{margin-bottom:.55em}
+.qa details summary{font-family:var(--serif);font-weight:500;font-size:18px;line-height:1.5}
+.qa details summary::marker{color:var(--ink-soft)}
+
+footer{border-top:1px solid var(--rule);margin-top:50px;padding:30px 0 60px;font-size:15px;color:var(--ink-soft)}
+footer ol{padding-left:1.2em;max-width:90ch}
+
+@media (max-width:1020px){
+  .lab.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .lab.two .controls{grid-column:1 / -1;border-left:0;padding-left:0;border-top:1px solid var(--rule);padding-top:14px}
+}
+@media (max-width:860px){
+  body{font-size:17px}
+  .lab,.lab.two{grid-template-columns:minmax(0,1fr)}
+  .controls{border-left:0;padding-left:0;border-top:1px solid var(--rule);padding-top:14px}
+  .sheet canvas,.hero .sheet canvas{height:300px}
+  .top nav{display:none}
+  .top{position:static}
+  .hero-eq math{font-size:1.05em}
+  .eq math{font-size:.95em}
+  .eq{padding-left:0}
+  .wrap{padding:0 16px}
+}
+
+/* additions for this tool */
+.params{position:sticky;top:54px;z-index:4;background:var(--sheet);border:1px solid var(--rule);border-radius:2px;padding:12px 18px;margin:22px 0 10px;font-family:var(--sans);font-size:14.5px}
+.params .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 26px}
+.params .ctl{margin:0 0 6px}
+.params h4{margin:0 0 8px;font-family:var(--sans);font-size:14px;font-weight:650;color:var(--ink-soft);font-stretch:90%}
+textarea{width:100%;height:120px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);padding:8px;border-radius:2px}
+.legend span span{display:inline}
+.pill{display:inline-block;font-family:var(--sans);font-size:13px;font-weight:600;padding:2px 9px;border:1px solid var(--rule);border-radius:2px;color:var(--ink-soft);margin:0 6px 6px 0}
+ul.plain{max-width:78ch;padding-left:1.2em}
+ul.plain li{margin-bottom:.45em}
+@media (max-width:860px){.params{position:static}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="course"><a href="https://www.linkedin.com/in/sergio-blanco-professor/" target="_blank" rel="noopener">Sergio Blanco, PhD</a>&ensp;Electrochemistry 101</span>
+    <nav aria-label="Sections">
+      <a href="#physics">Transport</a>
+      <a href="#fick">Fick</a>
+      <a href="#limiting">Limiting current</a>
+      <a href="#measure">Measuring D</a>
+      <a href="#diagnostics">Diagnostics</a>
+      <a href="#sandbox">Sandbox</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="hero" aria-labelledby="t-hero">
+  <h1 id="t-hero">Diffusion control of electrode reactions</h1>
+  <p class="lede">When electron transfer is fast, the current is limited by how quickly the reactant reaches the surface. Everything below follows from one equation and one picture: a depletion layer that grows as the square root of time.</p>
+
+  <div class="hero-eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi mathvariant="normal">∂</mi><msub><mi>C</mi><mi>O</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>t</mi><mo stretchy="false">)</mo></mrow><mrow><mi mathvariant="normal">∂</mi><mi>t</mi></mrow></mfrac><mo>=</mo><msub><mi>D</mi><mi>O</mi></msub><mtext> </mtext><mfrac><mrow><msup><mi mathvariant="normal">∂</mi><mn>2</mn></msup><msub><mi>C</mi><mi>O</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>t</mi><mo stretchy="false">)</mo></mrow><mrow><mi mathvariant="normal">∂</mi><msup><mi>x</mi><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{\partial C_O(x,t)}{\partial t} = D_O\,\frac{\partial^2 C_O(x,t)}{\partial x^2}</annotation></semantics></math></span></div>
+
+  <div class="params" id="shared">
+    <h4>Simulated system, shared by every panel on this page</h4>
+    <div class="row">
+      <div class="ctl"><label for="p-n"><span>Electrons, n</span>
+        <select id="p-n"><option value="1" selected>1</option><option value="2">2</option></select></label></div>
+      <div class="ctl"><label for="p-A"><span>Area, A</span><output id="o-p-A"></output></label>
+        <input type="range" id="p-A" min="0.01" max="1" step="0.01" value="0.07"></div>
+      <div class="ctl"><label for="p-C"><span>Concentration, C*</span><output id="o-p-C"></output></label>
+        <input type="range" id="p-C" min="0.5" max="20" step="0.5" value="5"></div>
+      <div class="ctl"><label for="p-D"><span>True D at 25 °C</span><output id="o-p-D"></output></label>
+        <input type="range" id="p-D" min="-7" max="-4" step="0.02" value="-5.12"></div>
+      <div class="ctl"><label for="p-T"><span>Temperature, T</span><output id="o-p-T"></output></label>
+        <input type="range" id="p-T" min="5" max="60" step="1" value="25"></div>
+    </div>
+    <label class="check" style="margin-top:4px"><input type="checkbox" id="p-couple" checked> Let temperature act on D through the Stokes–Einstein relation, D = kT/6πηr, with the viscosity of water</label>
+    <p class="note" style="margin:6px 0 0" id="o-p-DT"></p>
+  </div>
+
+  <div class="lab two">
+    <div class="sheet">
+      <canvas id="c-prof" role="img" aria-label="Concentration profiles of the oxidized and reduced species against distance from the electrode"></canvas>
+      <div class="legend">
+        <span style="color:var(--cathodic)"><i></i><span>C<sub>O</sub>(x,t) / C*</span></span>
+        <span style="color:var(--anodic)"><i></i><span>C<sub>R</sub>(x,t) / C*</span></span>
+        <span style="color:var(--transport)"><i class="dash"></i><span>linearized gradient and δ</span></span>
+      </div>
+    </div>
+    <div class="sheet">
+      <canvas id="c-step" role="img" aria-label="Cottrell current decay against time with a marker at the selected time"></canvas>
+      <div class="legend"><span style="color:var(--ink)"><i></i><span>i(t) after the potential step</span></span></div>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="h-t"><span>Time after the step, t</span><output id="o-h-t"></output></label>
+        <input type="range" id="h-t" min="-2" max="1.7" step="0.01" value="0"></div>
+      <button type="button" id="h-play">Play</button>
+      <dl class="readout">
+        <div><dt>Diffusion layer, δ = √(πDt)</dt><dd id="r-h-delta"></dd></div>
+        <div><dt>Surface gradient</dt><dd id="r-h-grad"></dd></div>
+        <div><dt>Current, i</dt><dd id="r-h-i"></dd></div>
+        <div><dt>Charge passed, Q</dt><dd id="r-h-q"></dd></div>
+      </dl>
+      <p class="note">Step to a potential where C<sub>O</sub>(0,t) = 0: the surface reaction is so fast that the only question left is how fast O arrives.</p>
+    </div>
+  </div>
+
+  <div class="try"><strong>Try this.</strong> Watch the profile at 0.1 s and at 10 s. The layer thickens a hundredfold more slowly than the time passes, because δ grows with √t, and that single fact is why the current falls as 1/√t rather than exponentially. Then raise D and notice that both the layer and the current scale with √D, not with D. Warming the cell does the same thing indirectly: D is tied to temperature through the viscosity of water, so going from 25 to 60 °C roughly doubles D and raises the current by about 40%.</div>
+</section>
+
+<section id="physics" aria-labelledby="t-physics">
+  <h2 id="t-physics"><span class="sec">§1</span>The physical process</h2>
+  <div class="prose">
+    <p>Three mechanisms bring a species to an electrode: migration of charged species in the electric field, convection from stirring or density gradients, and diffusion down a concentration gradient. The Nernst–Planck equation collects them for one dimension:</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>J</mi><mi>j</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mo>−</mo><msub><mi>D</mi><mi>j</mi></msub><mtext> </mtext><mfrac><mrow><mi mathvariant="normal">∂</mi><msub><mi>C</mi><mi>j</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><mi mathvariant="normal">∂</mi><mi>x</mi></mrow></mfrac><mo>−</mo><mfrac><mrow><msub><mi>z</mi><mi>j</mi></msub><mi>F</mi></mrow><mrow><mi>R</mi><mi>T</mi></mrow></mfrac><msub><mi>D</mi><mi>j</mi></msub><msub><mi>C</mi><mi>j</mi></msub><mtext> </mtext><mfrac><mrow><mi mathvariant="normal">∂</mi><mi>ϕ</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><mi mathvariant="normal">∂</mi><mi>x</mi></mrow></mfrac><mo>+</mo><msub><mi>C</mi><mi>j</mi></msub><mtext> </mtext><mi>v</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">J_j(x) = -D_j\,\frac{\partial C_j(x)}{\partial x} - \frac{z_jF}{RT}D_jC_j\,\frac{\partial \phi(x)}{\partial x} + C_j\,v(x)</annotation></semantics></math></span></div>
+    <p>Diffusion control means arranging the experiment so only the first term survives. Migration is suppressed with an excess of inert supporting electrolyte, which carries the current and collapses the field in solution. Convection is suppressed by working in quiescent solution, on a timescale short enough that density-driven flow has not yet developed, and long enough that charging of the double layer is over.</p>
+  </div>
+
+  <div class="lab two">
+    <div class="sheet">
+      <canvas id="c-mig" role="img" aria-label="Fraction of the analyte flux carried by migration against the excess of supporting electrolyte"></canvas>
+      <p class="cap">Equal mobilities assumed for all ions, 1:1 supporting electrolyte. The point is the order of magnitude, not the exact number.</p>
+    </div>
+    <div class="sheet">
+      <canvas id="c-win" role="img" aria-label="Current against time on logarithmic axes showing the charging, diffusion and convection regimes"></canvas>
+      <div class="legend">
+        <span style="color:var(--ink)"><i></i><span>Cottrell decay</span></span>
+        <span style="color:var(--transport)"><i class="dash"></i><span>unusable regimes</span></span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="g-z"><span>Charge of the analyte, |z|</span>
+        <select id="g-z"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></label></div>
+      <div class="ctl"><label for="g-ratio"><span>Supporting electrolyte excess</span><output id="o-g-ratio"></output></label>
+        <input type="range" id="g-ratio" min="0" max="2.7" step="0.05" value="2"></div>
+      <div class="ctl"><label for="g-ru"><span>Uncompensated resistance, R<sub>u</sub></span><output id="o-g-ru"></output></label>
+        <input type="range" id="g-ru" min="0" max="3.3" step="0.05" value="2"></div>
+      <div class="ctl"><label for="g-cdl"><span>Double-layer capacitance</span><output id="o-g-cdl"></output></label>
+        <input type="range" id="g-cdl" min="5" max="60" step="1" value="20"></div>
+      <div class="ctl"><label for="g-conv"><span>Onset of natural convection</span><output id="o-g-conv"></output></label>
+        <input type="range" id="g-conv" min="5" max="60" step="1" value="25"></div>
+      <dl class="readout">
+        <div><dt>Migration share of the flux</dt><dd id="r-g-mig"></dd></div>
+        <div><dt>Cell time constant, R<sub>u</sub>C<sub>dl</sub></dt><dd id="r-g-rc"></dd></div>
+        <div><dt>Usable window</dt><dd id="r-g-win"></dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section id="fick" aria-labelledby="t-fick">
+  <h2 id="t-fick"><span class="sec">§2</span>Fick's laws and the growing layer</h2>
+  <div class="prose">
+    <p>Fick's first law relates the flux to the gradient; combining it with mass conservation gives the second law, the equation at the top of this page. For a planar electrode in a quiet solution the boundary conditions are semi-infinite diffusion and a bulk concentration far away:</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>C</mi><mi>O</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mn>0</mn><mo stretchy="false">)</mo><mo>=</mo><msubsup><mi>C</mi><mi>O</mi><mo lspace="0em" rspace="0em">∗</mo></msubsup><mo separator="true">,</mo><mspace width="2em"/><munder><mrow><mi>lim</mi><mo>⁡</mo></mrow><mrow><mi>x</mi><mo>→</mo><mi mathvariant="normal">∞</mi></mrow></munder><msub><mi>C</mi><mi>O</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msubsup><mi>C</mi><mi>O</mi><mo lspace="0em" rspace="0em">∗</mo></msubsup><mo separator="true">,</mo><mspace width="2em"/><msub><mi>C</mi><mi>O</mi></msub><mo stretchy="false">(</mo><mn>0</mn><mo separator="true">,</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">C_O(x,0) = C_O^{*}, \qquad \lim_{x\to\infty}C_O(x,t) = C_O^{*}, \qquad C_O(0,t) = 0</annotation></semantics></math></span></div>
+    <p>The last condition is the mass-transport-limited case: the potential is stepped far enough that every molecule reaching the surface reacts immediately. Laplace transformation then gives the profile and its surface gradient:</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>C</mi><mi>O</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msubsup><mi>C</mi><mi>O</mi><mo lspace="0em" rspace="0em">∗</mo></msubsup><mtext> </mtext><mrow><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">f</mi></mrow><mtext> ⁣</mtext><mrow><mo fence="true">(</mo><mfrac><mi>x</mi><mrow><mn>2</mn><msqrt><mrow><msub><mi>D</mi><mi>O</mi></msub><mi>t</mi></mrow></msqrt></mrow></mfrac><mo fence="true">)</mo></mrow><mo separator="true">,</mo><mspace width="2em"/><msub><mrow><mfrac><mrow><mi mathvariant="normal">∂</mi><msub><mi>C</mi><mi>O</mi></msub></mrow><mrow><mi mathvariant="normal">∂</mi><mi>x</mi></mrow></mfrac><mo fence="true">∣</mo></mrow><mrow><mi>x</mi><mo>=</mo><mn>0</mn></mrow></msub><mo>=</mo><mfrac><msubsup><mi>C</mi><mi>O</mi><mo lspace="0em" rspace="0em">∗</mo></msubsup><msqrt><mrow><mi>π</mi><msub><mi>D</mi><mi>O</mi></msub><mi>t</mi></mrow></msqrt></mfrac></mrow><annotation encoding="application/x-tex">C_O(x,t) = C_O^{*}\,\mathrm{erf}\!\left(\frac{x}{2\sqrt{D_Ot}}\right), \qquad \left.\frac{\partial C_O}{\partial x}\right|_{x=0} = \frac{C_O^{*}}{\sqrt{\pi D_O t}}</annotation></semantics></math></span></div>
+    <p>Multiplying the surface flux by nFA gives the Cottrell equation, and the gradient at the surface defines the equivalent linear layer δ = √(πDt), which is the thickness a straight-line profile would need to carry the same flux.</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>i</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>n</mi><mi>F</mi><mi>A</mi><msubsup><mi>D</mi><mi>O</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msubsup><msubsup><mi>C</mi><mi>O</mi><mo lspace="0em" rspace="0em">∗</mo></msubsup></mrow><mrow><msup><mi>π</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><msup><mi>t</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex">i(t) = \frac{nFAD_O^{1/2}C_O^{*}}{\pi^{1/2}t^{1/2}}</annotation></semantics></math></span></div>
+  </div>
+
+  <div class="lab">
+    <div class="sheet">
+      <canvas id="c-snap" role="img" aria-label="Concentration profiles at several times for two species with different diffusion coefficients"></canvas>
+      <div class="legend">
+        <span style="color:var(--cathodic)"><i></i><span>species with D</span></span>
+        <span style="color:var(--ink-soft)"><i class="dash"></i><span>second species</span></span>
+      </div>
+      <p class="cap">Profiles at 0.1, 1, 5 and 20 s. The profiles are self-similar: they collapse onto one curve when x is scaled by √(Dt).</p>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="f-ratio"><span>Second species, D′/D</span><output id="o-f-ratio"></output></label>
+        <input type="range" id="f-ratio" min="0.1" max="4" step="0.1" value="0.3"></div>
+      <dl class="readout">
+        <div><dt>δ at 0.1 s</dt><dd id="r-f-d1"></dd></div>
+        <div><dt>δ at 1 s</dt><dd id="r-f-d2"></dd></div>
+        <div><dt>δ at 20 s</dt><dd id="r-f-d3"></dd></div>
+        <div><dt>Ratio of currents, i′/i</dt><dd id="r-f-ri"></dd></div>
+      </dl>
+      <p class="note">A species that diffuses three times more slowly does not give a third of the current: the current scales with √D.</p>
+    </div>
+  </div>
+</section>
+
+<section id="limiting" aria-labelledby="t-limiting">
+  <h2 id="t-limiting"><span class="sec">§3</span>Limiting current and the Nernst diffusion layer</h2>
+  <div class="prose">
+    <p>If the solution is stirred, or if the electrode is small enough that diffusion arrives from all directions, the depletion layer stops growing. The profile becomes linear across a layer of fixed thickness δ, and the current reaches a steady limiting value:</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>i</mi><mi>l</mi></msub><mo>=</mo><mfrac><mrow><mi>n</mi><mi>F</mi><mi>A</mi><msub><mi>D</mi><mi>O</mi></msub><msubsup><mi>C</mi><mi>O</mi><mo lspace="0em" rspace="0em">∗</mo></msubsup></mrow><mi>δ</mi></mfrac></mrow><annotation encoding="application/x-tex">i_l = \frac{nFAD_OC_O^{*}}{\delta}</annotation></semantics></math></span></div>
+    <p>The transient and the steady state meet where the growing layer reaches the hydrodynamic one, at t ≈ δ²/(πD). Before that time the experiment is a clean transient; after it, convection sets the answer. A microdisk of radius r reaches steady state by a different route, radial diffusion, with i<sub>ss</sub> = 4nFD C* r, which is why microelectrodes give steady currents in unstirred solution.</p>
+  </div>
+
+  <div class="lab">
+    <div class="sheet">
+      <canvas id="c-delta" role="img" aria-label="Growth of the diffusion layer with time compared with a fixed hydrodynamic layer"></canvas>
+      <div class="legend">
+        <span style="color:var(--ink)"><i></i><span>δ(t) = √(πDt)</span></span>
+        <span style="color:var(--transport)"><i class="dash"></i><span>stirred layer</span></span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="l-delta"><span>Stirred layer thickness, δ</span><output id="o-l-delta"></output></label>
+        <input type="range" id="l-delta" min="5" max="500" step="5" value="100" style="accent-color:var(--transport)"></div>
+      <div class="ctl"><label for="l-r"><span>Microdisk radius, r</span><output id="o-l-r"></output></label>
+        <input type="range" id="l-r" min="1" max="50" step="1" value="5"></div>
+      <dl class="readout">
+        <div><dt>Transient becomes invalid at</dt><dd id="r-l-t"></dd></div>
+        <div><dt>Limiting current, stirred</dt><dd id="r-l-il"></dd></div>
+        <div><dt>Current density, stirred</dt><dd id="r-l-jl"></dd></div>
+        <div><dt>Microdisk steady current</dt><dd id="r-l-iss"></dd></div>
+        <div><dt>Microdisk current density</dt><dd id="r-l-jss"></dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section id="measure" aria-labelledby="t-measure">
+  <h2 id="t-measure"><span class="sec">§4</span>Measuring the diffusion coefficient</h2>
+  <div class="prose">
+    <p>Four experiments on the same simulated system. Each one should return the D set in the parameter panel; where it does not, the reason is instructive. Change D or C* at the top and every panel responds.</p>
+  </div>
+
+  <h3>A. Chronoamperometry, the Cottrell experiment</h3>
+  <div class="prose">
+    <p>Step the potential into the limiting region and record i(t). A plot of i against t<sup>−1/2</sup> is a straight line through the origin whose slope contains D:</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mtext>slope</mtext><mo>=</mo><mfrac><mrow><mi>n</mi><mi>F</mi><mi>A</mi><msup><mi>D</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><msup><mi>C</mi><mo lspace="0em" rspace="0em">∗</mo></msup></mrow><msup><mi>π</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup></mfrac><mspace width="2em"/><mo>⟹</mo><mspace width="2em"/><mi>D</mi><mo>=</mo><mi>π</mi><msup><mrow><mo fence="true">(</mo><mfrac><mtext>slope</mtext><mrow><mi>n</mi><mi>F</mi><mi>A</mi><msup><mi>C</mi><mo lspace="0em" rspace="0em">∗</mo></msup></mrow></mfrac><mo fence="true">)</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\text{slope} = \frac{nFAD^{1/2}C^{*}}{\pi^{1/2}} \qquad\Longrightarrow\qquad D = \pi\left(\frac{\text{slope}}{nFAC^{*}}\right)^{2}</annotation></semantics></math></span></div>
+  </div>
+  <div class="lab two">
+    <div class="sheet">
+      <canvas id="c-cot" role="img" aria-label="Simulated chronoamperometric decay on logarithmic axes with the fitting window marked"></canvas>
+      <div class="legend">
+        <span style="color:var(--cathodic)"><i></i><span>points in the fit window</span></span>
+        <span style="color:var(--ink-soft)"><i class="dash"></i><span>ideal Cottrell</span></span>
+      </div>
+    </div>
+    <div class="sheet">
+      <canvas id="c-cotfit" role="img" aria-label="Current against the inverse square root of time with the least-squares fit"></canvas>
+      <div class="legend">
+        <span style="color:var(--cathodic)"><i class="dash"></i><span>least-squares fit</span></span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="a-from"><span>Fit from</span><output id="o-a-from"></output></label>
+        <input type="range" id="a-from" min="-2" max="1.7" step="0.05" value="-1" style="accent-color:var(--cathodic)"></div>
+      <div class="ctl"><label for="a-to"><span>Fit to</span><output id="o-a-to"></output></label>
+        <input type="range" id="a-to" min="-2" max="1.7" step="0.05" value="1.5" style="accent-color:var(--cathodic)"></div>
+      <div class="ctl"><label for="a-noise"><span>Noise</span><output id="o-a-noise"></output></label>
+        <input type="range" id="a-noise" min="0" max="5" step="0.5" value="2"></div>
+      <dl class="readout">
+        <div><dt>Points in window</dt><dd id="r-a-n"></dd></div>
+        <div><dt>Slope</dt><dd id="r-a-slope"></dd></div>
+        <div><dt>D from the fit</dt><dd id="r-a-D"></dd></div>
+        <div><dt>Deviation from the true D</dt><dd id="r-a-err"></dd></div>
+        <div><dt>R²</dt><dd id="r-a-r2"></dd></div>
+      </dl>
+      <div style="margin-top:12px"><button type="button" id="a-new">New noise</button></div>
+    </div>
+  </div>
+  <details>
+    <summary>Use your own data instead</summary>
+    <p class="note">Paste two columns, time and current, separated by commas, tabs or spaces. Export a chronoamperometry curve from your potentiostat software as CSV and drop it here; n, A and C* are taken from the panel at the top.</p>
+    <textarea id="a-csv" placeholder="0.05, 1.82e-4&#10;0.10, 1.29e-4&#10;0.20, 9.1e-5"></textarea>
+    <p><label class="check" style="display:inline-flex;margin-right:14px">Current unit
+      <select id="a-unit"><option value="1">A</option><option value="0.001">mA</option><option value="0.000001">µA</option></select></label>
+      <button type="button" id="a-use">Use my data</button>
+      <button type="button" id="a-sim">Back to simulated data</button></p>
+  </details>
+  <p class="note prose">Two limits bracket the usable window. Below a few milliseconds the charging current dominates; beyond twenty seconds or so, natural convection feeds the electrode and the measured current sits above the Cottrell line. Drag the window into either end and watch D drift.</p>
+
+  <h3>B. Cyclic voltammetry, the Randles–Ševčík analysis</h3>
+  <div class="prose">
+    <p>For a reversible couple the peak current grows with the square root of the scan rate. At 25 °C the compact form is i<sub>p</sub> = 2.69 × 10⁵ n<sup>3/2</sup> A D<sup>1/2</sup> C* v<sup>1/2</sup>, and in general:</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>i</mi><mi>p</mi></msub><mo>=</mo><mn>0.4463</mn><mtext> </mtext><mi>n</mi><mi>F</mi><mi>A</mi><msup><mi>C</mi><mo lspace="0em" rspace="0em">∗</mo></msup><msup><mrow><mo fence="true">(</mo><mfrac><mrow><mi>n</mi><mi>F</mi><mi>v</mi><mi>D</mi></mrow><mrow><mi>R</mi><mi>T</mi></mrow></mfrac><mo fence="true">)</mo></mrow><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup></mrow><annotation encoding="application/x-tex">i_p = 0.4463\,nFAC^{*}\left(\frac{nFvD}{RT}\right)^{1/2}</annotation></semantics></math></span></div>
+    <p>The voltammograms here are not drawn from that formula. They come from a finite-difference simulation of the same diffusion equation with a Nernstian surface condition, so the peak currents are a result rather than an assumption.</p>
+  </div>
+  <div class="lab two">
+    <div class="sheet">
+      <canvas id="c-cv" role="img" aria-label="Simulated cyclic voltammograms at several scan rates"></canvas>
+      <div class="legend"><span style="color:var(--ink-soft)"><i></i><span>increasing scan rate</span></span></div>
+    </div>
+    <div class="sheet">
+      <canvas id="c-rs" role="img" aria-label="Peak current against the square root of scan rate with a linear fit"></canvas>
+      <div class="legend">
+        <span style="color:var(--cathodic)"><i></i><span>simulated peaks</span></span>
+        <span style="color:var(--ink-soft)"><i class="dash"></i><span>Randles–Ševčík with the true D</span></span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="b-set"><span>Scan rates</span>
+        <select id="b-set"><option value="slow">5 to 50 mV s⁻¹</option><option value="mid" selected>10 to 200 mV s⁻¹</option><option value="fast">50 to 1000 mV s⁻¹</option></select></label></div>
+      <dl class="readout">
+        <div><dt>Peak separation, ΔE<sub>p</sub></dt><dd id="r-b-dep"></dd></div>
+        <div><dt>Raw peak ratio, i<sub>pa</sub>/i<sub>pc</sub></dt><dd id="r-b-ratio"></dd></div>
+        <div><dt>D from the slope</dt><dd id="r-b-D"></dd></div>
+        <div><dt>Deviation from the true D</dt><dd id="r-b-err"></dd></div>
+      </dl>
+      <p class="note">The raw ratio is below one because the anodic peak sits on the decaying cathodic tail. Measure it from the extrapolated baseline, or use Nicholson's empirical correction, before calling a couple irreversible.</p>
+    </div>
+  </div>
+
+  <h3>C. Chronopotentiometry, the Sand equation</h3>
+  <div class="prose">
+    <p>Impose a constant current instead of a potential. The surface concentration falls until it reaches zero at the transition time τ, where the potential swings sharply. The product iτ<sup>1/2</sup> is the constant that carries D:</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>i</mi><mtext> </mtext><msup><mi>τ</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><mo>=</mo><mfrac><mrow><mi>n</mi><mi>F</mi><mi>A</mi><msup><mi>D</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><msup><mi>π</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><msup><mi>C</mi><mo lspace="0em" rspace="0em">∗</mo></msup></mrow><mn>2</mn></mfrac><mspace width="2em"/><mo>⟹</mo><mspace width="2em"/><msup><mi>τ</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><mo>=</mo><mfrac><mrow><mi>n</mi><mi>F</mi><mi>A</mi><msup><mi>π</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><msup><mi>D</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><msup><mi>C</mi><mo lspace="0em" rspace="0em">∗</mo></msup></mrow><mn>2</mn></mfrac><mo>⋅</mo><mfrac><mn>1</mn><mi>i</mi></mfrac></mrow><annotation encoding="application/x-tex">i\,\tau^{1/2} = \frac{nFAD^{1/2}\pi^{1/2}C^{*}}{2} \qquad\Longrightarrow\qquad \tau^{1/2} = \frac{nFA\pi^{1/2}D^{1/2}C^{*}}{2}\cdot\frac{1}{i}</annotation></semantics></math></span></div>
+  </div>
+  <div class="lab two">
+    <div class="sheet">
+      <canvas id="c-cp" role="img" aria-label="Potential against time at several applied currents with the transition times marked"></canvas>
+      <div class="legend">
+        <span style="color:var(--ink-soft)"><i></i><span>E(t) at each current</span></span>
+        <span style="color:var(--transport)"><i class="dash"></i><span>transition time τ</span></span>
+      </div>
+    </div>
+    <div class="sheet">
+      <canvas id="c-sand" role="img" aria-label="Square root of the transition time against the inverse of the applied current"></canvas>
+      <div class="legend"><span style="color:var(--cathodic)"><i class="dash"></i><span>least-squares fit</span></span></div>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="c-scale"><span>Current range</span><output id="o-c-scale"></output></label>
+        <input type="range" id="c-scale" min="0.3" max="3" step="0.1" value="1"></div>
+      <dl class="readout">
+        <div><dt>Transition times</dt><dd id="r-c-taus"></dd></div>
+        <div><dt>iτ<sup>1/2</sup></dt><dd id="r-c-k"></dd></div>
+        <div><dt>D from the slope</dt><dd id="r-c-D"></dd></div>
+      </dl>
+      <p class="note">Choose currents that put τ between roughly one and ten seconds. Too short and charging distorts the transition; too long and convection erases it.</p>
+    </div>
+  </div>
+
+  <h3>D. Impedance, the Warburg coefficient</h3>
+  <div class="prose">
+    <p>In the Randles circuit, semi-infinite diffusion appears as the Warburg impedance, equal real and imaginary parts falling as ω<sup>−1/2</sup>. It produces the 45° line at low frequency in the Nyquist plot, and a straight line of slope σ when Z′ is plotted against ω<sup>−1/2</sup>:</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>Z</mi><mi>W</mi></msub><mo>=</mo><mi>σ</mi><mtext> </mtext><msup><mi>ω</mi><mrow><mo>−</mo><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>j</mi><mo stretchy="false">)</mo><mo separator="true">,</mo><mspace width="2em"/><mi>σ</mi><mo>=</mo><mfrac><mrow><mi>R</mi><mi>T</mi></mrow><mrow><msup><mi>n</mi><mn>2</mn></msup><msup><mi>F</mi><mn>2</mn></msup><mi>A</mi><msqrt><mn>2</mn></msqrt></mrow></mfrac><mrow><mo fence="true">(</mo><mfrac><mn>1</mn><mrow><msubsup><mi>D</mi><mi>O</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msubsup><msubsup><mi>C</mi><mi>O</mi><mo lspace="0em" rspace="0em">∗</mo></msubsup></mrow></mfrac><mo>+</mo><mfrac><mn>1</mn><mrow><msubsup><mi>D</mi><mi>R</mi><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msubsup><msubsup><mi>C</mi><mi>R</mi><mo lspace="0em" rspace="0em">∗</mo></msubsup></mrow></mfrac><mo fence="true">)</mo></mrow></mrow><annotation encoding="application/x-tex">Z_W = \sigma\,\omega^{-1/2}(1-j), \qquad \sigma = \frac{RT}{n^{2}F^{2}A\sqrt{2}}\left(\frac{1}{D_O^{1/2}C_O^{*}} + \frac{1}{D_R^{1/2}C_R^{*}}\right)</annotation></semantics></math></span></div>
+    <p>With both forms of the couple present at the same concentration and with equal diffusion coefficients, this collapses to D = [√2 RT / (n²F²AσC*)]².</p>
+  </div>
+  <div class="lab two">
+    <div class="sheet">
+      <canvas id="c-nyq" role="img" aria-label="Nyquist plot of the Randles circuit showing the kinetic semicircle and the Warburg line"></canvas>
+      <div class="legend">
+        <span style="color:var(--ink)"><i></i><span>Randles circuit</span></span>
+        <span style="color:var(--cathodic)"><i></i><span>frequencies used for σ</span></span>
+      </div>
+    </div>
+    <div class="sheet">
+      <canvas id="c-war" role="img" aria-label="Real impedance against the inverse square root of angular frequency"></canvas>
+      <div class="legend"><span style="color:var(--cathodic)"><i class="dash"></i><span>Warburg fit, slope σ</span></span></div>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="d-rct"><span>Charge-transfer resistance, R<sub>ct</sub></span><output id="o-d-rct"></output></label>
+        <input type="range" id="d-rct" min="0" max="4" step="0.05" value="2.7"></div>
+      <div class="ctl"><label for="d-cdl"><span>Double-layer capacitance</span><output id="o-d-cdl"></output></label>
+        <input type="range" id="d-cdl" min="5" max="100" step="1" value="20"></div>
+      <div class="ctl"><label for="d-rs"><span>Solution resistance, R<sub>s</sub></span><output id="o-d-rs"></output></label>
+        <input type="range" id="d-rs" min="1" max="200" step="1" value="20"></div>
+      <div class="ctl"><label for="d-fmax"><span>Highest frequency used for σ</span><output id="o-d-fmax"></output></label>
+        <input type="range" id="d-fmax" min="-2" max="2" step="0.1" value="0" style="accent-color:var(--cathodic)"></div>
+      <label class="check" style="margin-bottom:12px"><input type="checkbox" id="d-zoom"> Zoom on the kinetic semicircle</label>
+      <dl class="readout">
+        <div><dt>σ from the fit</dt><dd id="r-d-sigma"></dd></div>
+        <div><dt>D from σ</dt><dd id="r-d-D"></dd></div>
+        <div><dt>Deviation from the true D</dt><dd id="r-d-err"></dd></div>
+      </dl>
+      <p class="note">Push the fit to high frequency and the kinetic semicircle contaminates the slope. The Warburg region is the part where the phase angle is close to 45°.</p>
+    </div>
+  </div>
+</section>
+
+<section id="example" aria-labelledby="t-example">
+  <h2 id="t-example"><span class="sec">§5</span>Worked example: ferricyanide on a 3 mm disk</h2>
+  <div class="prose">
+    <p>A 3 mm glassy carbon disk (A = 0.0707 cm²) in 5 mM K₃Fe(CN)₆ with 1 M KCl, n = 1, at 25 °C. Three experiments were run on the same electrode and gave:</p>
+  </div>
+  <table class="data" id="t-ex" aria-label="Measured quantities from three techniques"></table>
+  <details>
+    <summary>Show the solution</summary>
+    <ol class="steps" id="s-ex"></ol>
+  </details>
+  <details>
+    <summary>How much is the answer worth? Error propagation</summary>
+    <ol class="steps" id="s-err"></ol>
+  </details>
+</section>
+
+<section id="diagnostics" aria-labelledby="t-diag">
+  <h2 id="t-diag"><span class="sec">§6</span>Is it really diffusion control?</h2>
+  <div class="prose">
+    <p>Before using any of those equations, two questions have to be answered: is the species diffusing freely to the surface or already attached to it, and is the electron transfer fast enough on the timescale of the experiment?</p>
+    <p>The first question is settled by the scan-rate dependence. A freely diffusing species gives i<sub>p</sub> ∝ v<sup>1/2</sup>; a surface-confined one gives i<sub>p</sub> ∝ v, because all of the material is already there and simply reacts faster as the scan quickens. A log–log plot answers it in one picture.</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msubsup><mi>i</mi><mi>p</mi><mtext>(surface)</mtext></msubsup><mo>=</mo><mfrac><mrow><msup><mi>n</mi><mn>2</mn></msup><msup><mi>F</mi><mn>2</mn></msup><mi>A</mi><mi mathvariant="normal">Γ</mi><mi>v</mi></mrow><mrow><mn>4</mn><mi>R</mi><mi>T</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">i_p^{\text{(surface)}} = \frac{n^{2}F^{2}A\Gamma v}{4RT}</annotation></semantics></math></span></div>
+    <p>The second is settled by the peak separation. For a reversible system ΔE<sub>p</sub> ≈ 59/n mV and does not change with v. As the scan rate outruns the electron transfer, ΔE<sub>p</sub> grows, and Nicholson's analysis converts it to a rate constant through the dimensionless parameter ψ, with the working curve usually taken in the fitted form of Lavagnini:</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>ψ</mi><mo>=</mo><msup><mi>k</mi><mn>0</mn></msup><msup><mrow><mo fence="true">(</mo><mfrac><mrow><mi>π</mi><mi>D</mi><mi>n</mi><mi>F</mi><mi>v</mi></mrow><mrow><mi>R</mi><mi>T</mi></mrow></mfrac><mo fence="true">)</mo></mrow><mrow><mo>−</mo><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup></mrow><annotation encoding="application/x-tex">\psi = k^{0}\left(\frac{\pi D n F v}{RT}\right)^{-1/2}</annotation></semantics></math></span></div>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>ψ</mi><mo>≈</mo><mfrac><mrow><mo>−</mo><mn>0.6288</mn><mo>+</mo><mn>0.0021</mn><mtext> </mtext><mi>X</mi></mrow><mrow><mn>1</mn><mo>−</mo><mn>0.017</mn><mtext> </mtext><mi>X</mi></mrow></mfrac><mo separator="true">,</mo><mspace width="2em"/><mi>X</mi><mo>=</mo><mi mathvariant="normal">Δ</mi><msub><mi>E</mi><mi>p</mi></msub><mtext> in mV</mtext></mrow><annotation encoding="application/x-tex">\psi \approx \frac{-0.6288 + 0.0021\,X}{1 - 0.017\,X}, \qquad X = \Delta E_p \text{ in mV}</annotation></semantics></math></span></div>
+  </div>
+  <div class="lab two">
+    <div class="sheet">
+      <canvas id="c-logv" role="img" aria-label="Logarithm of peak current against logarithm of scan rate for diffusing and adsorbed species"></canvas>
+      <div class="legend">
+        <span style="color:var(--cathodic)"><i></i><span>diffusing, slope ½</span></span>
+        <span style="color:var(--anodic)"><i></i><span>adsorbed, slope 1</span></span>
+      </div>
+    </div>
+    <div class="sheet">
+      <canvas id="c-nich" role="img" aria-label="Peak separation against the standard rate constant for several scan rates"></canvas>
+      <div class="legend"><span style="color:var(--ink-soft)"><i></i><span>one curve per scan rate</span></span></div>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="e-gamma"><span>Surface coverage, Γ</span><output id="o-e-gamma"></output></label>
+        <input type="range" id="e-gamma" min="-11" max="-8" step="0.05" value="-10" style="accent-color:var(--anodic)"></div>
+      <div class="ctl"><label for="e-dep"><span>Measured ΔE<sub>p</sub> at 100 mV s⁻¹</span><output id="o-e-dep"></output></label>
+        <input type="range" id="e-dep" min="61" max="200" step="1" value="75"></div>
+      <div class="ctl"><label for="e-ru"><span>Uncompensated resistance</span><output id="o-e-ru"></output></label>
+        <input type="range" id="e-ru" min="0" max="500" step="5" value="0" style="accent-color:var(--transport)"></div>
+      <dl class="readout">
+        <div><dt>Crossover scan rate</dt><dd id="r-e-cross"></dd></div>
+        <div><dt>ψ from ΔE<sub>p</sub></dt><dd id="r-e-psi"></dd></div>
+        <div><dt>k⁰ at 100 mV s⁻¹</dt><dd id="r-e-k0"></dd></div>
+        <div><dt>ΔE<sub>p</sub> inflation from iR</dt><dd id="r-e-ir"></dd></div>
+      </dl>
+      <p class="note">The iR readout shows how much of a measured separation can be pure ohmic drop. Correct for it before reporting a rate constant.</p>
+    </div>
+  </div>
+</section>
+
+<section id="sandbox" aria-labelledby="t-sandbox">
+  <h2 id="t-sandbox"><span class="sec">§7</span>Simulation sandbox</h2>
+  <div class="prose">
+    <p>The same diffusion equation solved numerically, in the explicit finite-difference form of Appendix B of Bard and Faulkner. Space is divided into boxes of width Δx and time into steps Δt, and the only parameter that matters is their combination, the model diffusion coefficient D<sub>M</sub> = DΔt/Δx². The surface box is held at the Nernstian ratio set by the step potential.</p>
+    <div class="eq"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msubsup><mi>C</mi><mi>j</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msubsup><mo>=</mo><msubsup><mi>C</mi><mi>j</mi><mi>k</mi></msubsup><mo>+</mo><msub><mi>D</mi><mi>M</mi></msub><mrow><mo fence="true">(</mo><msubsup><mi>C</mi><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow><mi>k</mi></msubsup><mo>−</mo><mn>2</mn><msubsup><mi>C</mi><mi>j</mi><mi>k</mi></msubsup><mo>+</mo><msubsup><mi>C</mi><mrow><mi>j</mi><mo>−</mo><mn>1</mn></mrow><mi>k</mi></msubsup><mo fence="true">)</mo></mrow><mo separator="true">,</mo><mspace width="2em"/><msub><mi>D</mi><mi>M</mi></msub><mo>=</mo><mfrac><mrow><mi>D</mi><mtext> </mtext><mi mathvariant="normal">Δ</mi><mi>t</mi></mrow><mrow><mi mathvariant="normal">Δ</mi><msup><mi>x</mi><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex">C_j^{k+1} = C_j^{k} + D_M\left(C_{j+1}^{k} - 2C_j^{k} + C_{j-1}^{k}\right), \qquad D_M = \frac{D\,\Delta t}{\Delta x^{2}}</annotation></semantics></math></span></div>
+    <p>Above D<sub>M</sub> = 0.5 the scheme is unstable: the profile oscillates and then explodes. It is worth showing students that failure once, because it is the clearest demonstration that the grid is not free.</p>
+  </div>
+  <div class="lab two">
+    <div class="sheet">
+      <canvas id="c-sim" role="img" aria-label="Simulated concentration profiles at several times"></canvas>
+      <div class="legend">
+        <span style="color:var(--cathodic)"><i></i><span>simulated profile</span></span>
+        <span style="color:var(--ink)"><i class="dash"></i><span>analytical profile</span></span>
+      </div>
+    </div>
+    <div class="sheet">
+      <canvas id="c-simi" role="img" aria-label="Simulated current compared with the Cottrell equation"></canvas>
+      <div class="legend">
+        <span style="color:var(--cathodic)"><i></i><span>simulated current</span></span>
+        <span style="color:var(--ink)"><i class="dash"></i><span>Cottrell</span></span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="s-dm"><span>Model coefficient, D<sub>M</sub></span><output id="o-s-dm"></output></label>
+        <input type="range" id="s-dm" min="0.05" max="0.62" step="0.01" value="0.45"></div>
+      <div class="ctl"><label for="s-steps"><span>Time steps</span>
+        <select id="s-steps"><option value="200">200</option><option value="800" selected>800</option><option value="3000">3000</option></select></label></div>
+      <div class="ctl"><label for="s-eta"><span>Step potential vs E°′</span><output id="o-s-eta"></output></label>
+        <input type="range" id="s-eta" min="-300" max="60" step="5" value="-200"></div>
+      <dl class="readout">
+        <div><dt>Surface ratio, C<sub>O</sub>(0)/C*</dt><dd id="r-s-surf"></dd></div>
+        <div><dt>Boxes used</dt><dd id="r-s-boxes"></dd></div>
+        <div><dt>Error against Cottrell</dt><dd id="r-s-err"></dd></div>
+        <div><dt>Stability</dt><dd id="r-s-stab"></dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section id="check" class="qa" aria-labelledby="t-check">
+  <h2 id="t-check"><span class="sec">§8</span>Check your understanding</h2>
+  <details>
+    <summary>A Cottrell experiment gives a straight i vs t<sup>−1/2</sup> line with a large positive intercept. What is wrong?</summary>
+    <p>A genuine Cottrell line passes through the origin. A positive intercept usually means a current that does not decay: a parallel faradaic reaction, a leaking cell, or an adsorbed species contributing a time-independent term. Charging current does the opposite, inflating the early points and bending the line near large t<sup>−1/2</sup>.</p>
+  </details>
+  <details>
+    <summary>Your peak current doubles when the scan rate doubles. Can you use Randles–Ševčík to get D?</summary>
+    <p>No. Linearity with v, not with v<sup>1/2</sup>, indicates a surface-confined species. There is no diffusion coefficient to extract; what you can extract is the coverage Γ from the peak area.</p>
+  </details>
+  <details>
+    <summary>Two students report D for the same couple: 7.6 × 10⁻⁶ and 6.1 × 10⁻⁶ cm² s⁻¹. One measured the electrode diameter with a ruler. How much of the gap can that explain?</summary>
+    <p>All of it. D scales with A⁻², so an area off by 12% moves D by about 25%. On a 3 mm disk, reading the diameter as 3.0 instead of 2.8 mm does exactly that. Calibrate the area electrochemically with a couple of known D instead of trusting the nominal diameter.</p>
+  </details>
+  <details>
+    <summary>Why does the Cottrell current measured at 60 s sit above the ideal line, while the one at 1 ms sits below it?</summary>
+    <p>At long times natural convection delivers extra material, holding the layer thinner than √(πDt) predicts, so the current is higher than the ideal decay. At very short times the measured current is dominated by double-layer charging and by the cell time constant R<sub>u</sub>C<sub>dl</sub>, which cannot follow the step, so the faradaic part is incomplete.</p>
+  </details>
+  <details>
+    <summary>At what time does the diffusion layer reach 100 µm, and why does that number matter?</summary>
+    <p>From δ = √(πDt), with D = 7.6 × 10⁻⁶ cm² s⁻¹ it takes about 4 s. It matters because 100 µm is the order of the layer that mild stirring sustains: beyond that time the quiescent experiment is no longer quiescent.</p>
+  </details>
+
+  <h3>Pitfalls checklist</h3>
+  <ul class="plain">
+    <li>Supporting electrolyte at least fifty to a hundred times the analyte concentration, or migration is part of your answer.</li>
+    <li>Electrode area measured, not assumed. D carries the error squared.</li>
+    <li>Concentrations in mol cm⁻³ when using these equations: 5 mM is 5 × 10⁻⁶ mol cm⁻³.</li>
+    <li>Solution quiescent and thermostatted; a vibrating bench shows up as scatter at long times.</li>
+    <li>Oxygen removed if the potential window reaches its reduction.</li>
+    <li>iR compensation checked before any peak separation is interpreted.</li>
+    <li>Two independent techniques agreeing within 10% before a value is reported.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Conventions: distances in cm, concentrations in mol cm⁻³, D in cm² s⁻¹, anodic currents positive. Prepared by Sergio Blanco, PhD. Connect on <a href="https://www.linkedin.com/in/sergio-blanco-professor/" target="_blank" rel="noopener">LinkedIn</a>.</p>
+    <p>Further reading</p>
+    <ol>
+      <li>A. J. Bard, L. R. Faulkner, <i>Electrochemical Methods: Fundamentals and Applications</i>, 2nd ed., Wiley, 2001: mass transfer in Chapter 4, potential step methods in Chapter 5, sweep methods in Chapter 6, controlled-current techniques in Chapter 8, impedance in Chapter 10, and digital simulation in Appendix B.</li>
+      <li>R. S. Nicholson, Theory and application of cyclic voltammetry for measurement of electrode reaction kinetics, <i>Anal. Chem.</i> 37 (1965) 1351–1355.</li>
+      <li>I. Lavagnini, R. Antiochia, F. Magno, An extended method for the practical evaluation of the standard rate constant from cyclic voltammetric data, <i>Electroanalysis</i> 16 (2004) 505–506.</li>
+      <li>S. J. Konopka, B. McDuffie, Diffusion coefficients of ferri- and ferrocyanide ions in aqueous media, using twin-electrode thin-layer electrochemistry, <i>Anal. Chem.</i> 42 (1970) 1741–1746.</li>
+    </ol>
+  </div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+const F = 96485.33212, R = 8.314462618, LN10 = Math.LN10;
+const $ = id => document.getElementById(id);
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- formatting ---------- */
+const SUP = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
+const sup = n => String(n).split("").map(c => SUP[c] || c).join("");
+const minus = s => String(s).replace(/-/g, "−");
+const fx = (v, d) => minus(v.toFixed(d));
+function sci(v, sig){
+  sig = sig || 2;
+  if (v === 0 || !isFinite(v)) return "0";
+  let e = Math.floor(Math.log10(Math.abs(v)));
+  let m = v / Math.pow(10, e);
+  if (Math.abs(+m.toFixed(sig-1)) >= 10) { m /= 10; e += 1; }
+  return minus(m.toFixed(sig-1)) + " × 10" + sup(e);
+}
+function smart(v, unit){
+  const a = Math.abs(v);
+  if (a >= 0.01 && a < 1e4) return fx(v, a >= 100 ? 0 : a >= 10 ? 1 : 2) + " " + unit;
+  return sci(v, 2) + " " + unit;
+}
+function ohms(v){ // ohm cm2
+  if (v >= 1e6) return sci(v,2) + " Ω cm²";
+  if (v >= 1e3) return fx(v/1e3, v>=1e5?0:1) + " kΩ cm²";
+  if (v >= 1) return fx(v, v>=100?0:1) + " Ω cm²";
+  return fx(v*1e3, 1) + " mΩ cm²";
+}
+
+/* ---------- plotting ---------- */
+function niceStep(range, count){
+  const raw = range / count, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p;
+}
+function ticks(min, max, count){
+  const st = niceStep(max - min, count), out = [];
+  for (let v = Math.ceil(min/st - 1e-9)*st; v <= max + st*1e-9; v += st) out.push(+v.toFixed(12));
+  return out;
+}
+function defFmt(v){
+  if (Math.abs(v) < 1e-12) return "0";
+  const a = Math.abs(v);
+  if (a >= 1e4 || a < 1e-3) return sci(v,1);
+  return minus(String(+v.toPrecision(4)));
+}
+const logFmt = v => Number.isInteger(v) ? "10" + sup(v) : "";
+function intTicks(min, max, maxCount){
+  const span = Math.floor(max) - Math.ceil(min);
+  const step = Math.max(1, Math.ceil(span / maxCount));
+  const out = [];
+  for (let v = Math.ceil(min); v <= max; v += step) out.push(v);
+  return out;
+}
+
+function plot(canvas, o){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w || !h) return null;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(w*dpr); canvas.height = Math.round(h*dpr);
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  const m = Object.assign({l:70, r:14, t:12, b:50}, o.margin || {});
+  const pw = w - m.l - m.r, ph = h - m.t - m.b;
+  const X = x => m.l + (x - o.xmin) / (o.xmax - o.xmin) * pw;
+  const Y = y => m.t + (1 - (y - o.ymin) / (o.ymax - o.ymin)) * ph;
+  const ink = cssv("--ink"), soft = cssv("--ink-soft");
+  const sans = cssv("--sans");
+  const xt = o.xticks || ticks(o.xmin, o.xmax, Math.max(3, Math.round(pw/85)));
+  const yt = o.yticks || ticks(o.ymin, o.ymax, Math.max(3, Math.round(ph/55)));
+
+  ctx.lineWidth = 1; ctx.strokeStyle = cssv("--plot-grid");
+  xt.forEach(v => { const px = Math.round(X(v))+.5; ctx.beginPath(); ctx.moveTo(px, m.t); ctx.lineTo(px, m.t+ph); ctx.stroke(); });
+  yt.forEach(v => { const py = Math.round(Y(v))+.5; ctx.beginPath(); ctx.moveTo(m.l, py); ctx.lineTo(m.l+pw, py); ctx.stroke(); });
+  ctx.strokeStyle = soft;
+  if (!o.noZero && !o.logY && o.ymin < 0 && o.ymax > 0){ const py=Math.round(Y(0))+.5; ctx.beginPath(); ctx.moveTo(m.l,py); ctx.lineTo(m.l+pw,py); ctx.stroke(); }
+  if (!o.noZero && o.xmin < 0 && o.xmax > 0){ const px=Math.round(X(0))+.5; ctx.beginPath(); ctx.moveTo(px,m.t); ctx.lineTo(px,m.t+ph); ctx.stroke(); }
+  ctx.strokeStyle = ink; ctx.lineWidth = 1.2; ctx.strokeRect(m.l+.5, m.t+.5, pw-1, ph-1);
+
+  ctx.font = "500 12.5px " + sans; ctx.fillStyle = soft;
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  xt.forEach(v => ctx.fillText((o.xfmt||defFmt)(v), X(v), m.t+ph+6));
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  yt.forEach(v => ctx.fillText((o.yfmt||defFmt)(v), m.l-7, Y(v)));
+  ctx.font = "600 13.5px " + sans; ctx.fillStyle = ink;
+  ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  ctx.fillText(o.xlabel || "", m.l + pw/2, h - 4);
+  ctx.save(); ctx.translate(15, m.t + ph/2); ctx.rotate(-Math.PI/2); ctx.textBaseline = "middle";
+  ctx.fillText(o.ylabel || "", 0, 0); ctx.restore();
+
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l+1, m.t+1, pw-2, ph-2); ctx.clip();
+  (o.bands||[]).forEach(b => { ctx.fillStyle = b.color; ctx.fillRect(X(b.x0), m.t, X(b.x1)-X(b.x0), ph); });
+  const line = (x0,y0,x1,y1,color,dash,width) => { ctx.strokeStyle=color; ctx.lineWidth=width||1.5; ctx.setLineDash(dash||[]); ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke(); ctx.setLineDash([]); };
+  (o.hlines||[]).forEach(l => line(m.l, Y(l.y), m.l+pw, Y(l.y), l.color, l.dash, l.width));
+  (o.vlines||[]).forEach(l => line(X(l.x), m.t, X(l.x), m.t+ph, l.color, l.dash, l.width));
+  (o.series||[]).forEach(s => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2.4; ctx.setLineDash(s.dash || []);
+    ctx.lineJoin = "round"; ctx.beginPath();
+    let pen = false; const N = s.upto != null ? s.upto : s.x.length;
+    for (let k = 0; k < N; k++){
+      const yv = s.y[k];
+      if (!isFinite(yv)) { pen = false; continue; }
+      const px = X(s.x[k]), py = Math.max(-5000, Math.min(5000, Y(yv)));
+      if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  });
+  (o.points||[]).forEach(p => {
+    ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), p.r || 3.2, 0, 2*Math.PI);
+    if (p.hollow){ ctx.fillStyle = cssv("--sheet"); ctx.fill(); ctx.lineWidth = 1.8; ctx.strokeStyle = p.color; ctx.stroke(); }
+    else { ctx.fillStyle = p.color; ctx.fill(); }
+  });
+  if (o.after) o.after(ctx, X, Y, {m, pw, ph, sans, ink, soft});
+  ctx.restore();
+  return {X, Y, ctx, m, pw, ph};
+}
+function linspace(a, b, N){ const out = new Array(N); for (let k=0;k<N;k++) out[k] = a + (b-a)*k/(N-1); return out; }
+
+const drawers = [];
+function register(fn){ drawers.push(fn); }
+function redrawAll(){ drawers.forEach(fn => fn()); }
+function bindInputs(ids, fn){ ids.forEach(id => { const el = $(id); el.addEventListener("input", fn); el.addEventListener("change", fn); }); register(fn); }
+
+
+
+/* ---------- shared state ---------- */
+function etaW(TC){                   // viscosity of water, mPa s, 0-100 C
+  return 1.002*Math.pow(10, (1.3272*(20 - TC) - 0.001053*(TC - 20)*(TC - 20))/(TC + 105));
+}
+const ETA25 = etaW(25);
+function P(){
+  const TC = +$("p-T").value, T = TC + 273.15, D25 = Math.pow(10, +$("p-D").value);
+  const coupled = $("p-couple").checked;
+  const eta = etaW(TC);
+  const fac = coupled ? (T/298.15)*(ETA25/eta) : 1;
+  return {n: +$("p-n").value, A: +$("p-A").value, C: +$("p-C").value*1e-6,
+          D: D25*fac, D25, T, TC, eta, coupled};
+}
+function erf(x){
+  const s = x < 0 ? -1 : 1; x = Math.abs(x);
+  const t = 1/(1 + 0.3275911*x);
+  const y = 1 - (((((1.061405429*t - 1.453152027)*t) + 1.421413741)*t - 0.284496736)*t + 0.254829592)*t*Math.exp(-x*x);
+  return s*y;
+}
+const cott = (t, p) => p.n*F*p.A*Math.sqrt(p.D)*p.C/Math.sqrt(Math.PI*t);
+const delta = (t, p) => Math.sqrt(Math.PI*p.D*t);
+const uA = v => smart(v*1e6, "µA");
+function fit(xs, ys){            // least squares y = s x + c
+  const N = xs.length;
+  if (N < 3) return null;
+  let mx = 0, my = 0;
+  for (let k=0;k<N;k++){ mx += xs[k]; my += ys[k]; }
+  mx /= N; my /= N;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let k=0;k<N;k++){ sxy += (xs[k]-mx)*(ys[k]-my); sxx += (xs[k]-mx)**2; syy += (ys[k]-my)**2; }
+  return {s: sxy/sxx, c: my - (sxy/sxx)*mx, r2: syy > 0 ? (sxy*sxy)/(sxx*syy) : 1, N};
+}
+function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+  let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gaussFrom(r){ let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+const errPct = (got, truth) => { const e = (got/truth - 1)*100; return (e >= 0 ? "+" : "") + minus(e.toFixed(1)) + "%"; };
+
+function drawShared(){
+  const p = P();
+  $("o-p-A").textContent = p.A.toFixed(2) + " cm²";
+  $("o-p-C").textContent = (+$("p-C").value) + " mM";
+  $("o-p-D").textContent = sci(p.D25, 2) + " cm² s⁻¹";
+  $("o-p-T").textContent = p.TC + " °C";
+  $("o-p-DT").textContent = p.coupled
+    ? "At " + p.TC + " °C the viscosity of water is " + p.eta.toFixed(3) + " mPa s, so D = " + sci(p.D, 3) +
+      " cm² s⁻¹, a factor of " + (p.D/p.D25).toFixed(2) + " on the value at 25 °C. The current follows √D, so it changes by a factor of " +
+      Math.sqrt(p.D/p.D25).toFixed(2) + "."
+    : "D is held at its 25 °C value whatever the temperature, so the panels below show the effect of T on the Nernstian terms alone.";
+}
+["p-n","p-A","p-C","p-D","p-T","p-couple"].forEach(id => $(id).addEventListener("input", () => { drawShared(); redrawAll(); }));
+$("p-couple").addEventListener("change", () => { drawShared(); redrawAll(); });
+
+/* ---------- hero ---------- */
+function drawHero(){
+  const p = P(), t = Math.pow(10, +$("h-t").value);
+  $("o-h-t").textContent = t < 1 ? (t*1000).toFixed(0) + " ms" : t.toFixed(2) + " s";
+  const d = delta(t, p), xmax = Math.max(50, Math.min(900, d*1e4*2.4));
+  const xs = linspace(0, xmax, 400);                       // µm
+  const cO = xs.map(x => erf(x*1e-4/(2*Math.sqrt(p.D*t))));
+  const cR = cO.map(v => 1 - v);
+  const dl = d*1e4;
+  plot($("c-prof"), {xmin:0, xmax, ymin:0, ymax:1.1, noZero:true,
+    xlabel:"Distance from the electrode, x / µm", ylabel:"C(x,t) / C*",
+    series:[{x:xs, y:cO, color:cssv("--cathodic"), width:3},
+            {x:xs, y:cR, color:cssv("--anodic"), width:2.4},
+            {x:[0, dl], y:[0, 1], color:cssv("--transport"), dash:[7,6], width:2}],
+    vlines:[{x:dl, color:cssv("--transport"), dash:[3,4], width:1.5}],
+    after:(ctx, X, Y, g) => { ctx.fillStyle = cssv("--transport"); ctx.font = "600 13px " + g.sans;
+      ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText("δ", X(dl)+6, Y(1.05)); }});
+  const ts = linspace(0.01, 50, 400);
+  plot($("c-step"), {xmin:0, xmax:50, ymin:0, ymax:cott(0.25, p)*1e6, noZero:true,
+    xlabel:"Time, t / s", ylabel:"i / µA",
+    series:[{x:ts, y:ts.map(v => cott(v, p)*1e6), color:cssv("--ink"), width:3}],
+    points: t <= 50 ? [{x:t, y:cott(t, p)*1e6, color:cssv("--cathodic"), r:5}] : []});
+  $("r-h-delta").textContent = dl < 1000 ? dl.toFixed(1) + " µm" : (dl/1000).toFixed(2) + " mm";
+  $("r-h-grad").textContent = sci(p.C/Math.sqrt(Math.PI*p.D*t), 2) + " mol cm⁻⁴";
+  $("r-h-i").textContent = uA(cott(t, p));
+  $("r-h-q").textContent = smart(2*p.n*F*p.A*p.C*Math.sqrt(p.D*t/Math.PI)*1e6, "µC");
+}
+bindInputs(["h-t"], drawHero);
+let playing = false, playRAF = 0;
+$("h-play").addEventListener("click", () => {
+  playing = !playing;
+  $("h-play").textContent = playing ? "Pause" : "Play";
+  if (!playing){ cancelAnimationFrame(playRAF); return; }
+  const el = $("h-t"), step = () => {
+    let v = +el.value + 0.012;
+    if (v > 1.7) v = -2;
+    el.value = v; drawHero();
+    if (playing) playRAF = requestAnimationFrame(step);
+  };
+  playRAF = requestAnimationFrame(step);
+});
+
+/* ---------- §1 transport ---------- */
+function drawTransport(){
+  const p = P(), z = +$("g-z").value, ratio = Math.pow(10, +$("g-ratio").value);
+  const Ru = Math.pow(10, +$("g-ru").value), Cdl = +$("g-cdl").value*1e-6*p.A, tConv = +$("g-conv").value;
+  $("o-g-ratio").textContent = ratio < 10 ? ratio.toFixed(1) + "×" : ratio.toFixed(0) + "×";
+  $("o-g-ru").textContent = Ru < 1000 ? Ru.toFixed(0) + " Ω" : (Ru/1000).toFixed(1) + " kΩ";
+  $("o-g-cdl").textContent = (+$("g-cdl").value) + " µF cm⁻²";
+  $("o-g-conv").textContent = tConv + " s";
+  const share = r => z*z/(z*z + 2*r);     // transference number of the analyte
+  const rs = linspace(0, 2.7, 200);
+  plot($("c-mig"), {xmin:0, xmax:2.7, ymin:0, ymax:100, noZero:true,
+    xlabel:"Supporting electrolyte / analyte", ylabel:"Migration share of the flux / %",
+    xfmt:logFmt, xticks:[0,1,2],
+    series:[{x:rs, y:rs.map(v => share(Math.pow(10, v))*100), color:cssv("--ink"), width:3}],
+    hlines:[{y:1, color:cssv("--transport"), dash:[7,6], width:1.6}],
+    points:[{x:Math.log10(ratio), y:share(ratio)*100, color:cssv("--cathodic"), r:5}],
+    after:(ctx, X, Y, g) => { ctx.fillStyle = cssv("--transport"); ctx.font = "600 12.5px " + g.sans;
+      ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText("1%", X(2.7)-4, Y(1)-3); }});
+  const tc = 5*Ru*Cdl, lo = Math.log10(Math.max(tc, 1e-5)), hi = Math.log10(tConv);
+  const lt = linspace(-5, 2, 300);
+  plot($("c-win"), {xmin:-5, xmax:2, ymin:-7, ymax:0, logY:true, noZero:true,
+    xlabel:"Time, t / s", ylabel:"i / A", xfmt:logFmt, yfmt:logFmt,
+    xticks:[-5,-4,-3,-2,-1,0,1,2], yticks:[-7,-6,-5,-4,-3,-2,-1,0],
+    bands:[{x0:-5, x1:lo, color:"rgba(149,99,15,.13)"}, {x0:hi, x1:2, color:"rgba(149,99,15,.13)"}],
+    series:[{x:lt, y:lt.map(v => Math.log10(cott(Math.pow(10, v), p))), color:cssv("--ink"), width:3}],
+    vlines:[{x:lo, color:cssv("--transport"), dash:[7,6], width:1.8},{x:hi, color:cssv("--transport"), dash:[7,6], width:1.8}],
+    after:(ctx, X, Y, g) => { ctx.fillStyle = cssv("--transport"); ctx.font = "600 12.5px " + g.sans;
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("charging", (X(-5)+X(lo))/2, Y(-0.3));
+      ctx.textAlign = "right"; ctx.fillText("convection", X(2)-6, Y(-0.3)); }});
+  $("r-g-mig").textContent = (share(ratio)*100).toFixed(share(ratio) < 0.1 ? 2 : 1) + "%";
+  $("r-g-rc").textContent = smart(Ru*Cdl*1e6, "µs");
+  $("r-g-win").textContent = (hi - lo).toFixed(1) + " decades";
+}
+bindInputs(["g-z","g-ratio","g-ru","g-cdl","g-conv"], drawTransport);
+
+/* ---------- §2 profiles ---------- */
+function drawFick(){
+  const p = P(), ratio = +$("f-ratio").value;
+  $("o-f-ratio").textContent = ratio.toFixed(1);
+  const times = [0.1, 1, 5, 20], xmax = Math.min(1200, delta(20, p)*1e4*2.2);
+  const xs = linspace(0, xmax, 400);
+  const series = [], vlines = [];
+  times.forEach(t => {
+    series.push({x:xs, y:xs.map(x => erf(x*1e-4/(2*Math.sqrt(p.D*t)))), color:cssv("--cathodic"), width:2.6});
+    series.push({x:xs, y:xs.map(x => erf(x*1e-4/(2*Math.sqrt(p.D*ratio*t)))), color:cssv("--ink-soft"), dash:[6,5], width:1.8});
+    vlines.push({x:delta(t, p)*1e4, color:cssv("--rule"), dash:[2,4], width:1});
+  });
+  plot($("c-snap"), {xmin:0, xmax, ymin:0, ymax:1.1, noZero:true,
+    xlabel:"x / µm", ylabel:"C(x,t) / C*", series, vlines,
+    after:(ctx, X, Y, g) => { ctx.fillStyle = g.soft; ctx.font = "600 12.5px " + g.sans;
+      ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      times.forEach(t => ctx.fillText(t + " s", X(delta(t, p)*1e4)+4, Y(0.06))); }});
+  $("r-f-d1").textContent = (delta(0.1, p)*1e4).toFixed(1) + " µm";
+  $("r-f-d2").textContent = (delta(1, p)*1e4).toFixed(1) + " µm";
+  $("r-f-d3").textContent = (delta(20, p)*1e4).toFixed(1) + " µm";
+  $("r-f-ri").textContent = Math.sqrt(ratio).toFixed(2);
+}
+bindInputs(["f-ratio"], drawFick);
+
+/* ---------- §3 limiting current ---------- */
+function drawLimiting(){
+  const p = P(), dStir = +$("l-delta").value*1e-4, r = +$("l-r").value*1e-4;
+  $("o-l-delta").textContent = (+$("l-delta").value) + " µm";
+  $("o-l-r").textContent = (+$("l-r").value) + " µm";
+  const tCross = dStir*dStir/(Math.PI*p.D);
+  const tmax = Math.max(5, Math.min(120, tCross*2.5));
+  const ts = linspace(0.01, tmax, 300);
+  plot($("c-delta"), {xmin:0, xmax:tmax, ymin:0, ymax:Math.max(dStir*1e4*1.6, delta(tmax, p)*1e4), noZero:true,
+    xlabel:"Time, t / s", ylabel:"Diffusion layer, δ / µm",
+    series:[{x:ts, y:ts.map(t => delta(t, p)*1e4), color:cssv("--ink"), width:3}],
+    hlines:[{y:dStir*1e4, color:cssv("--transport"), dash:[7,6], width:2}],
+    points: tCross <= tmax ? [{x:tCross, y:dStir*1e4, color:cssv("--cathodic"), r:5.5}] : []});
+  const il = p.n*F*p.A*p.D*p.C/dStir, iss = 4*p.n*F*p.D*p.C*r;
+  $("r-l-t").textContent = tCross < 1 ? (tCross*1000).toFixed(0) + " ms" : tCross.toFixed(1) + " s";
+  $("r-l-il").textContent = uA(il);
+  $("r-l-jl").textContent = smart(il/p.A*1e3, "mA cm⁻²");
+  $("r-l-iss").textContent = smart(iss*1e9, "nA");
+  $("r-l-jss").textContent = smart(iss/(Math.PI*r*r)*1e3, "mA cm⁻²");
+}
+bindInputs(["l-delta","l-r"], drawLimiting);
+
+/* ---------- §4A Cottrell ---------- */
+let cotSeed = 7, userData = null;
+function cotData(){
+  const p = P();
+  if (userData) return userData;
+  const rnd = rng(cotSeed), noise = +$("a-noise").value/100;
+  const tConv = +$("g-conv").value, dConv = Math.sqrt(Math.PI*p.D*tConv);
+  const Ru = Math.pow(10, +$("g-ru").value), Cdl = +$("g-cdl").value*1e-6*p.A, tau = Ru*Cdl;
+  const t = [], i = [];
+  for (let k = 0; k < 90; k++){
+    const tv = Math.pow(10, -2 + k*(1.7 + 2)/89);
+    const d = Math.min(Math.sqrt(Math.PI*p.D*tv), dConv);
+    const far = p.n*F*p.A*p.D*p.C/d;                       // Cottrell, capped by convection
+    const chg = (0.5/Ru)*Math.exp(-tv/tau);                // 0.5 V step through Ru
+    const val = (far + chg)*(1 + noise*gaussFrom(rnd));
+    t.push(tv); i.push(val);
+  }
+  return {t, i, simulated:true};
+}
+function drawCot(){
+  const p = P(), d = cotData();
+  const lo = Math.min(+$("a-from").value, +$("a-to").value), hi = Math.max(+$("a-from").value, +$("a-to").value);
+  const fmtT = v => v < 1 ? (v*1000).toFixed(0) + " ms" : v.toFixed(1) + " s";
+  $("o-a-from").textContent = fmtT(Math.pow(10, lo));
+  $("o-a-to").textContent = fmtT(Math.pow(10, hi));
+  $("o-a-noise").textContent = (+$("a-noise").value).toFixed(1) + "%";
+  const inW = d.t.map(v => Math.log10(v) >= lo && Math.log10(v) <= hi);
+  const lt = d.t.map(Math.log10), li = d.i.map(v => Math.log10(Math.abs(v)));
+  const ideal = d.t.map(v => Math.log10(cott(v, p)));
+  plot($("c-cot"), {xmin:Math.min(...lt)-0.1, xmax:Math.max(...lt)+0.1,
+    ymin:Math.min(...li)-0.3, ymax:Math.max(...li)+0.3, logY:true, noZero:true,
+    xlabel:"t / s", ylabel:"i / A", xfmt:logFmt, yfmt:logFmt,
+    xticks:intTicks(Math.min(...lt)-0.1, Math.max(...lt)+0.1, 7),
+    yticks:intTicks(Math.min(...li)-0.3, Math.max(...li)+0.3, 7),
+    bands:[{x0:lo, x1:hi, color:cssv("--window")}],
+    series: d.simulated ? [{x:lt, y:ideal, color:cssv("--ink-soft"), dash:[6,5], width:1.8}] : [],
+    points: lt.map((x,k) => ({x, y:li[k], color: inW[k] ? cssv("--cathodic") : cssv("--ink-soft"), r: inW[k] ? 4 : 3, hollow: !inW[k]}))});
+  const xs = [], ys = [];
+  d.t.forEach((v,k) => { if (inW[k]){ xs.push(1/Math.sqrt(v)); ys.push(d.i[k]); } });
+  const f = fit(xs, ys);
+  const xall = d.t.map(v => 1/Math.sqrt(v));
+  const xm = Math.max(...xall.filter((v,k) => inW[k] || true));
+  const series = [], pts = d.t.map((v,k) => ({x:1/Math.sqrt(v), y:d.i[k]*1e6,
+    color: inW[k] ? cssv("--cathodic") : cssv("--ink-soft"), r: inW[k] ? 4 : 3, hollow: !inW[k]}));
+  if (f) series.push({x:[0, xm], y:[f.c*1e6, (f.c + f.s*xm)*1e6], color:cssv("--cathodic"), dash:[8,5], width:2.2});
+  const ymx = Math.max(...pts.map(q => q.y))*1.08;
+  plot($("c-cotfit"), {xmin:0, xmax:xm*1.05, ymin:0, ymax:ymx, noZero:true,
+    xlabel:"t ^(−1/2) / s^(−1/2)", ylabel:"i / µA", series, points:pts});
+  if (f){
+    const Dfit = Math.PI*Math.pow(f.s/(p.n*F*p.A*p.C), 2);
+    $("r-a-n").textContent = f.N;
+    $("r-a-slope").textContent = sci(f.s, 3) + " A s^½";
+    $("r-a-D").textContent = sci(Dfit, 3) + " cm² s⁻¹";
+    $("r-a-err").textContent = d.simulated ? errPct(Dfit, p.D) : "–";
+    $("r-a-r2").textContent = f.r2.toFixed(4);
+  } else {
+    ["r-a-n","r-a-slope","r-a-D","r-a-err","r-a-r2"].forEach(id => $(id).textContent = "–");
+    $("r-a-n").textContent = "widen the window";
+  }
+}
+bindInputs(["a-from","a-to","a-noise"], drawCot);
+$("a-new").addEventListener("click", () => { cotSeed = (cotSeed*31 + 17) | 0; drawCot(); });
+$("a-use").addEventListener("click", () => {
+  const unit = +$("a-unit").value, rows = $("a-csv").value.trim().split(/\r?\n/);
+  const t = [], i = [];
+  rows.forEach(line => {
+    const parts = line.split(/[,;\t ]+/).map(Number).filter(v => isFinite(v));
+    if (parts.length >= 2 && parts[0] > 0){ t.push(parts[0]); i.push(Math.abs(parts[1])*unit); }
+  });
+  if (t.length < 4){ $("r-a-n").textContent = "need ≥ 4 rows"; return; }
+  userData = {t, i, simulated:false};
+  $("a-from").value = Math.log10(Math.min(...t)).toFixed(2);
+  $("a-to").value = Math.log10(Math.max(...t)).toFixed(2);
+  drawCot();
+});
+$("a-sim").addEventListener("click", () => { userData = null; drawCot(); });
+
+/* ---------- §4B cyclic voltammetry (finite difference) ---------- */
+function simulateCV(p, v, L){
+  const DM = 0.45, Estart = 0.3, Esw = -0.3;
+  const ttot = 2*(Estart - Esw)/v, dt = ttot/L, dx = Math.sqrt(p.D*dt/DM);
+  const N = Math.ceil(6*Math.sqrt(DM*L)) + 3;
+  let A = new Float64Array(N).fill(1), B = new Float64Array(N);
+  const nf = p.n*F/(R*p.T), E = [], I = [];
+  for (let k = 1; k <= L; k++){
+    const t = k*dt, Ek = k <= L/2 ? Estart - v*t : Esw + v*(t - ttot/2);
+    const An = A.slice(), Bn = B.slice();
+    for (let j = 1; j < N-1; j++){
+      An[j] = A[j] + DM*(A[j+1] - 2*A[j] + A[j-1]);
+      Bn[j] = B[j] + DM*(B[j+1] - 2*B[j] + B[j-1]);
+    }
+    A = An; B = Bn;
+    const th = Math.exp(nf*Ek), S = A[1] + B[1];
+    A[0] = S*th/(1 + th); B[0] = S/(1 + th);
+    I.push(-p.n*F*p.A*p.D*p.C*(-3*A[0] + 4*A[1] - A[2])/(2*dx));
+    E.push(Ek);
+  }
+  const half = Math.floor(L/2);
+  const fwd = I.slice(0, half), rev = I.slice(half);
+  const ipc = Math.min(...fwd), ipa = Math.max(...rev);
+  return {E, I, ipc, ipa, Epc: E[fwd.indexOf(ipc)], Epa: E[half + rev.indexOf(ipa)]};
+}
+const CVSETS = {slow:[5,10,20,35,50], mid:[10,25,50,100,200], fast:[50,100,250,500,1000]};
+function drawCV(){
+  const p = P(), set = CVSETS[$("b-set").value], runs = set.map(v => simulateCV(p, v/1000, 2000));
+  const soft = cssv("--ink-soft"), cath = cssv("--cathodic");
+  const allI = runs.flatMap(r => r.I);
+  const ylim = Math.max(...allI.map(Math.abs))*1.12;
+  plot($("c-cv"), {xmin:-0.3, xmax:0.3, ymin:-ylim*1e6, ymax:ylim*1e6,
+    xlabel:"E − E°′ / V", ylabel:"i / µA",
+    series: runs.map((r,k) => ({x:r.E, y:r.I.map(v => v*1e6), color: k === runs.length-1 ? cssv("--ink") : soft,
+      width: 1.3 + 1.5*k/(runs.length-1)}))});
+  const xs = set.map(v => Math.sqrt(v/1000)), ys = runs.map(r => Math.abs(r.ipc)*1e6);
+  const f = fit(xs, ys);
+  const theory = xs.map(x => 2.69e5*Math.pow(p.n,1.5)*p.A*Math.sqrt(p.D)*p.C*x*1e6*Math.sqrt(298.15/p.T));
+  const xm = Math.max(...xs)*1.1;
+  plot($("c-rs"), {xmin:0, xmax:xm, ymin:0, ymax:Math.max(...ys, ...theory)*1.1, noZero:true,
+    xlabel:"v ^(1/2) / V^(1/2) s^(−1/2)", ylabel:"|i_p| / µA",
+    series:[{x:[0, xm], y:[0, 2.69e5*Math.pow(p.n,1.5)*p.A*Math.sqrt(p.D)*p.C*xm*1e6*Math.sqrt(298.15/p.T)], color:soft, dash:[7,6], width:2},
+            f ? {x:[0, xm], y:[f.c, f.c + f.s*xm], color:cath, width:2.2} : {x:[], y:[]}],
+    points: xs.map((x,k) => ({x, y:ys[k], color:cath, r:5}))});
+  const last = runs[runs.length-1];
+  $("r-b-dep").textContent = ((last.Epa - last.Epc)*1000).toFixed(0) + " mV";
+  $("r-b-ratio").textContent = Math.abs(last.ipa/last.ipc).toFixed(2);
+  if (f){
+    const Dfit = Math.pow(f.s*1e-6/(0.4463*p.n*F*p.A*p.C*Math.sqrt(p.n*F/(R*p.T))), 2);
+    $("r-b-D").textContent = sci(Dfit, 3) + " cm² s⁻¹";
+    $("r-b-err").textContent = errPct(Dfit, p.D);
+  }
+}
+bindInputs(["b-set"], drawCV);
+
+/* ---------- §4C chronopotentiometry ---------- */
+function drawCP(){
+  const p = P(), scale = +$("c-scale").value;
+  $("o-c-scale").textContent = "×" + scale.toFixed(1);
+  const K = p.n*F*p.A*Math.sqrt(Math.PI*p.D)*p.C/2;           // i·τ^(1/2)
+  const base = K/Math.sqrt(4);                                 // current giving τ = 4 s
+  const currents = [0.6, 0.85, 1.2, 1.7, 2.4].map(m => base*m*scale);
+  const taus = currents.map(i => Math.pow(K/i, 2));
+  const soft = cssv("--ink-soft"), tr = cssv("--transport");
+  const tmax = Math.max(...taus)*1.25, nf = p.n*F/(R*p.T);
+  const series = [], vl = [];
+  taus.forEach(tau => {
+    const ts = linspace(tau*0.002, tau*0.999, 300);
+    series.push({x:ts, y:ts.map(t => (1/nf)*Math.log((Math.sqrt(tau) - Math.sqrt(t))/Math.sqrt(t))), color:soft, width:2});
+    vl.push({x:tau, color:tr, dash:[4,5], width:1.4});
+  });
+  plot($("c-cp"), {xmin:0, xmax:tmax, ymin:-0.3, ymax:0.3,
+    xlabel:"Time, t / s", ylabel:"E − E_(τ/4) / V", series, vlines:vl});
+  const xs = currents.map(i => 1/i), ys = taus.map(Math.sqrt);
+  const f = fit(xs, ys), xm = Math.max(...xs)*1.1;
+  plot($("c-sand"), {xmin:0, xmax:xm, ymin:0, ymax:Math.max(...ys)*1.15, noZero:true,
+    xlabel:"1 / i  (A⁻¹)", ylabel:"τ ^(1/2) / s^(1/2)",
+    series: f ? [{x:[0, xm], y:[f.c, f.c + f.s*xm], color:cssv("--cathodic"), dash:[8,5], width:2.2}] : [],
+    points: xs.map((x,k) => ({x, y:ys[k], color:cssv("--cathodic"), r:5}))});
+  $("r-c-taus").textContent = taus.map(t => t.toFixed(1)).join(", ") + " s";
+  $("r-c-k").textContent = sci(K, 3) + " A s^½";
+  if (f){
+    const Dfit = Math.pow(2*f.s/(p.n*F*p.A*Math.sqrt(Math.PI)*p.C), 2);
+    $("r-c-D").textContent = sci(Dfit, 3) + " cm² s⁻¹";
+  }
+}
+bindInputs(["c-scale"], drawCP);
+
+/* ---------- §4D impedance ---------- */
+function drawEIS(){
+  const p = P(), Rct = Math.pow(10, +$("d-rct").value), Cdl = +$("d-cdl").value*1e-6*p.A, Rs = +$("d-rs").value;
+  const fmax = Math.pow(10, +$("d-fmax").value);
+  $("o-d-rct").textContent = Rct < 1000 ? Rct.toFixed(0) + " Ω" : (Rct/1000).toFixed(1) + " kΩ";
+  $("o-d-cdl").textContent = (+$("d-cdl").value) + " µF cm⁻²";
+  $("o-d-rs").textContent = (+$("d-rs").value) + " Ω";
+  $("o-d-fmax").textContent = fmax < 1 ? (fmax*1000).toFixed(0) + " mHz" : fmax.toFixed(1) + " Hz";
+  const sigma = R*p.T/(p.n*p.n*F*F*p.A*Math.SQRT2)*(2/(Math.sqrt(p.D)*p.C));
+  const fs = [], Zr = [], Zi = [], used = [];
+  for (let k = 0; k <= 100; k++){
+    const f = Math.pow(10, -2 + k*7/100), w = 2*Math.PI*f;
+    const zw = sigma/Math.sqrt(w);
+    const far = {re: Rct + zw, im: -zw};
+    const yc = {re: 0, im: w*Cdl};
+    const den = far.re*far.re + far.im*far.im;
+    const yf = {re: far.re/den, im: -far.im/den};
+    const y = {re: yf.re + yc.re, im: yf.im + yc.im};
+    const yd = y.re*y.re + y.im*y.im;
+    fs.push(f); Zr.push(Rs + y.re/yd); Zi.push(-y.im/yd);
+    used.push(f <= fmax);
+  }
+  const lim = $("d-zoom").checked ? Rs + 1.5*Rct + 1 : Math.max(...Zr)*1.05;
+  plot($("c-nyq"), {xmin:0, xmax:lim, ymin:0, ymax:lim, noZero:true,
+    xlabel:"Z′ / Ω", ylabel:"−Z″ / Ω",
+    series:[{x:Zr, y:Zi.map(v => -v), color:cssv("--ink"), width:2.4}],
+    points: Zr.map((x,k) => ({x, y:-Zi[k], color: used[k] ? cssv("--cathodic") : cssv("--ink-soft"), r: used[k] ? 3.6 : 2.4, hollow: !used[k]}))
+      .filter(q => q.x < lim && q.y < lim)});
+  $("o-d-fmax").textContent += "";
+  const xs = [], ys = [];
+  fs.forEach((f,k) => { if (used[k] && f > 1e-2*0.99){ xs.push(1/Math.sqrt(2*Math.PI*f)); ys.push(Zr[k]); } });
+  const f2 = fit(xs, ys), xm = Math.max(...xs)*1.05;
+  plot($("c-war"), {xmin:0, xmax:xm, ymin:0, ymax:Math.max(...ys)*1.1, noZero:true,
+    xlabel:"ω ^(−1/2) / s^(1/2)", ylabel:"Z′ / Ω",
+    series: f2 ? [{x:[0, xm], y:[f2.c, f2.c + f2.s*xm], color:cssv("--cathodic"), dash:[8,5], width:2.2}] : [],
+    points: xs.map((x,k) => ({x, y:ys[k], color:cssv("--cathodic"), r:3.6}))});
+  if (f2){
+    const Dfit = Math.pow(Math.SQRT2*R*p.T/(p.n*p.n*F*F*p.A*f2.s*p.C), 2);
+    $("r-d-sigma").textContent = smart(f2.s, "Ω s^(−½)");
+    $("r-d-D").textContent = sci(Dfit, 3) + " cm² s⁻¹";
+    $("r-d-err").textContent = errPct(Dfit, p.D);
+  }
+}
+bindInputs(["d-rct","d-cdl","d-rs","d-fmax","d-zoom"], drawEIS);
+
+/* ---------- worked example ---------- */
+(function(){
+  const A = 0.0707, C = 5e-6, n = 1, T = 298.15, Dtrue = 7.6e-6;
+  const slopeCot = n*F*A*Math.sqrt(Dtrue)*C/Math.sqrt(Math.PI);
+  const ip50 = 2.69e5*A*Math.sqrt(Dtrue)*C*Math.sqrt(0.05);
+  const K = n*F*A*Math.sqrt(Math.PI*Dtrue)*C/2;
+  const rows = [
+    ["Chronoamperometry", "slope of i vs t^(−1/2)", sci(slopeCot, 3) + " A s^½"],
+    ["Cyclic voltammetry at 50 mV s⁻¹", "cathodic peak current", (ip50*1e6).toFixed(1) + " µA"],
+    ["Chronopotentiometry", "i·τ^(1/2)", sci(K, 3) + " A s^½"]
+  ];
+  $("t-ex").innerHTML = "<thead><tr><th scope='col' style='text-align:left'>Technique</th><th scope='col' style='text-align:left'>Quantity</th><th scope='col'>Value</th></tr></thead><tbody>" +
+    rows.map(r => "<tr><td style='text-align:left'>" + r[0] + "</td><td style='text-align:left'>" + r[1] + "</td><td>" + r[2] + "</td></tr>").join("") + "</tbody>";
+  const D1 = Math.PI*Math.pow(slopeCot/(n*F*A*C), 2);
+  const D2 = Math.pow(ip50/(2.69e5*A*C*Math.sqrt(0.05)), 2);
+  const D3 = Math.pow(2*K/(n*F*A*Math.sqrt(Math.PI)*C), 2);
+  $("s-ex").innerHTML = [
+    "Convert the concentration first: 5 mM = 5 × 10⁻³ mol L⁻¹ = 5 × 10⁻⁶ mol cm⁻³. Every one of these equations is written in centimetre units.",
+    "Cottrell: D = π (slope / nFAC*)² = π (" + sci(slopeCot,3) + " / (96 485 × 0.0707 × 5 × 10⁻⁶))² = " + sci(D1, 3) + " cm² s⁻¹.",
+    "Randles–Ševčík: D = [i_p / (2.69 × 10⁵ n^(3/2) A C* v^(1/2))]² = " + sci(D2, 3) + " cm² s⁻¹.",
+    "Sand: D = [2 i τ^(1/2) / (nFA π^(1/2) C*)]² = " + sci(D3, 3) + " cm² s⁻¹.",
+    "The three agree, as they must here, and sit at the literature value for ferricyanide in 1 M KCl, about 7.6 × 10⁻⁶ cm² s⁻¹. With real data, agreement within 10% across two techniques is the realistic target."
+  ].map(s => "<li>" + s + "</li>").join("");
+  $("s-err").innerHTML = [
+    "Each equation has the same shape: a measured quantity proportional to D^(1/2), A and C*. Solving for D squares everything, so every relative error is doubled.",
+    "A 5% error in the slope becomes 10% in D. A 5% error in the electrode area becomes 10%. A 5% error in concentration becomes 10%.",
+    "Adding those three in quadrature gives about 17% on D, which is why a value quoted to three significant figures from a single experiment is not honest.",
+    "The area is usually the worst offender, because the nominal disk diameter ignores recession, roughness and shielding. Calibrate it with a couple of known D, then keep that number."
+  ].map(s => "<li>" + s + "</li>").join("");
+})();
+
+/* ---------- §6 diagnostics ---------- */
+function drawDiag(){
+  const p = P(), G = Math.pow(10, +$("e-gamma").value), dep = +$("e-dep").value, Ru = +$("e-ru").value;
+  $("o-e-gamma").textContent = sci(G, 2) + " mol cm⁻²";
+  $("o-e-dep").textContent = dep + " mV";
+  $("o-e-ru").textContent = Ru + " Ω";
+  const vs = linspace(-2.3, 0.7, 120);     // log10(v / V s^-1)
+  const dif = vs.map(lv => Math.log10(2.69e5*Math.pow(p.n,1.5)*p.A*Math.sqrt(p.D)*p.C*Math.sqrt(Math.pow(10, lv))));
+  const ads = vs.map(lv => Math.log10(p.n*p.n*F*F*p.A*G*Math.pow(10, lv)/(4*R*p.T)));
+  const ymin = Math.min(...dif, ...ads) - 0.3, ymax = Math.max(...dif, ...ads) + 0.3;
+  plot($("c-logv"), {xmin:-2.3, xmax:0.7, ymin, ymax, logY:true, noZero:true,
+    xlabel:"Scan rate, v / V s⁻¹", ylabel:"i_p / A", xfmt:logFmt, yfmt:logFmt,
+    xticks:intTicks(-2.3, 0.7, 5), yticks:intTicks(ymin, ymax, 7),
+    series:[{x:vs, y:dif, color:cssv("--cathodic"), width:3},
+            {x:vs, y:ads, color:cssv("--anodic"), width:3}]});
+  const nf = p.n*F/(R*p.T);
+  const psiOf = X => (-0.6288 + 0.0021*X)/(1 - 0.017*X);
+  const depOf = psi => (psi + 0.6288)/(0.0021 + 0.017*psi);
+  const lk = linspace(-4, 1, 160);
+  const rates = [0.02, 0.1, 0.5];
+  plot($("c-nich"), {xmin:-4, xmax:1, ymin:55, ymax:220, noZero:true,
+    xlabel:"k⁰ / cm s⁻¹", ylabel:"ΔE_p / mV", xfmt:logFmt, xticks:[-4,-3,-2,-1,0,1],
+    series: rates.map((v,k) => ({x:lk, y:lk.map(l => {
+        const psi = Math.pow(10, l)/Math.sqrt(Math.PI*p.D*nf*v);
+        return Math.max(59, Math.min(400, depOf(psi)));
+      }), color: k === 1 ? cssv("--ink") : cssv("--ink-soft"), width: k === 1 ? 3 : 1.8})),
+    hlines:[{y:dep, color:cssv("--transport"), dash:[7,6], width:1.8}],
+    after:(ctx, X, Y, g) => { ctx.fillStyle = g.soft; ctx.font = "600 12.5px " + g.sans;
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      rates.forEach((v, idx) => {
+        const yv = [190, 155, 120][idx];
+        const k0at = psiOf(yv)*Math.sqrt(Math.PI*p.D*nf*v);
+        ctx.fillText((v*1000) + " mV s⁻¹", X(Math.log10(k0at)) + 8, Y(yv));
+      }); }});
+  const psi = psiOf(dep), k0 = psi*Math.sqrt(Math.PI*p.D*nf*0.1);
+  const ipc = 2.69e5*Math.pow(p.n,1.5)*p.A*Math.sqrt(p.D)*p.C*Math.sqrt(0.1);
+  const crossover = Math.pow(2.69e5*Math.pow(p.n,1.5)*p.A*Math.sqrt(p.D)*p.C/(p.n*p.n*F*F*p.A*G/(4*R*p.T)), 2);
+  $("r-e-cross").textContent = crossover < 1000 ? smart(crossover*1000, "mV s⁻¹") : sci(crossover, 2) + " V s⁻¹";
+  $("r-e-psi").textContent = psi > 0 ? psi.toFixed(2) : "out of range";
+  $("r-e-k0").textContent = psi > 0 ? sci(k0, 2) + " cm s⁻¹" : "–";
+  $("r-e-ir").textContent = (2*ipc*Ru*1000).toFixed(0) + " mV";
+}
+bindInputs(["e-gamma","e-dep","e-ru"], drawDiag);
+
+/* ---------- §7 sandbox ---------- */
+function drawSandbox(){
+  const p = P(), DM = +$("s-dm").value, L = +$("s-steps").value, etaMV = +$("s-eta").value;
+  $("o-s-dm").textContent = DM.toFixed(2);
+  $("o-s-eta").textContent = minus(etaMV + "") + " mV";
+  const ttot = 5, dt = ttot/L, dx = Math.sqrt(p.D*dt/DM);
+  const N = Math.min(900, Math.ceil(6*Math.sqrt(Math.max(DM,0.05)*L)) + 3);
+  const th = Math.exp(p.n*F/(R*p.T)*(etaMV/1000));
+  let A = new Float64Array(N).fill(1), B = new Float64Array(N);
+  const snapAt = [Math.round(L*0.04), Math.round(L*0.2), Math.round(L*0.6), L];
+  const snaps = [], ti = [], ii = [];
+  let blew = false;
+  for (let k = 1; k <= L; k++){
+    const An = A.slice(), Bn = B.slice();
+    for (let j = 1; j < N-1; j++){
+      An[j] = A[j] + DM*(A[j+1] - 2*A[j] + A[j-1]);
+      Bn[j] = B[j] + DM*(B[j+1] - 2*B[j] + B[j-1]);
+    }
+    A = An; B = Bn;
+    const S = A[1] + B[1];
+    A[0] = S*th/(1 + th); B[0] = S/(1 + th);
+    const cur = -p.n*F*p.A*p.D*p.C*(-3*A[0] + 4*A[1] - A[2])/(2*dx);
+    ti.push(k*dt); ii.push(cur);
+    if (!isFinite(cur) || Math.abs(A[Math.min(5,N-1)]) > 10) blew = true;
+    if (snapAt.includes(k)) snaps.push({t:k*dt, c:Array.from(A)});
+  }
+  const xs = Array.from({length:N}, (_,j) => j*dx*1e4);
+  const xmax = Math.min(1500, Math.max(...snaps.map(s => delta(s.t, p)*1e4*2.2)));
+  const series = [];
+  snaps.forEach(s => {
+    series.push({x:xs, y:s.c, color:cssv("--cathodic"), width:2.4});
+    const xa = linspace(0, xmax, 200);
+    const surf = th/(1+th);
+    series.push({x:xa, y:xa.map(x => surf + (1-surf)*erf(x*1e-4/(2*Math.sqrt(p.D*s.t)))), color:cssv("--ink"), dash:[5,6], width:1.8});
+  });
+  plot($("c-sim"), {xmin:0, xmax, ymin:-0.15, ymax:1.25, noZero:true,
+    xlabel:"x / µm", ylabel:"C_O / C*", series});
+  const cottrellLike = ti.map(t => (1 - th/(1+th))*cott(t, p)*1e6);
+  plot($("c-simi"), {xmin:0, xmax:ttot, ymin:0, ymax:Math.max(cottrellLike[Math.round(L*0.05)]*1.2, 1), noZero:true,
+    xlabel:"t / s", ylabel:"i / µA",
+    series:[{x:ti, y:ii.map(v => Math.abs(v)*1e6), color:cssv("--cathodic"), width:3},
+            {x:ti, y:cottrellLike, color:cssv("--ink"), dash:[5,6], width:1.8}]});
+  const kRef = Math.round(L*0.5);
+  const err = (Math.abs(ii[kRef])/((1 - th/(1+th))*cott(ti[kRef], p)) - 1)*100;
+  $("r-s-surf").textContent = (th/(1+th)).toFixed(3);
+  $("r-s-boxes").textContent = N;
+  $("r-s-err").textContent = blew ? "–" : (err >= 0 ? "+" : "") + minus(err.toFixed(2)) + "%";
+  $("r-s-stab").textContent = DM > 0.5 ? "unstable: D_M > 0.5" : DM > 0.45 ? "marginal" : "stable";
+}
+bindInputs(["s-dm","s-steps","s-eta"], drawSandbox);
+
+/* ---------- lifecycle ---------- */
+drawShared();
+let rq = 0;
+window.addEventListener("resize", () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(redrawAll); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(redrawAll);
+redrawAll();
+})();
+</script>
+</body>
+</html>
